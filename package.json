@@ -9,12 +9,19 @@
     "start": "ampt"
   },
   "dependencies": {
+    "@ampt/data": "^1.0.18",
     "@ampt/sdk": "^1",
-    "hono": "^3"
+    "@hashgraph/nft-utilities": "^2.4.1",
+    "@hashgraph/sdk": "^2.42.0-beta.1",
+    "hono": "^3",
+    "nft.storage": "^7.1.1",
+    "zod": "^3.22.4"
   },
   "ampt": {
     "app": "saferate-mortgag3",
-    "org": "dylan851239"
+    "org": "dylan851239",
+    "buildRuntime": "nodejs20",
+    "runtime": "nodejs20"
   },
   "files": [
     "*"
