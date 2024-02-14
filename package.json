@@ -1,0 +1,22 @@
+{
+  "name": "hono",
+  "version": "1.0.0",
+  "description": "Ampt Hono starter template",
+  "private": true,
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "ampt"
+  },
+  "dependencies": {
+    "@ampt/sdk": "^1",
+    "hono": "^3"
+  },
+  "ampt": {
+    "app": "saferate-mortgag3",
+    "org": "dylan851239"
+  },
+  "files": [
+    "*"
+  ]
+}
