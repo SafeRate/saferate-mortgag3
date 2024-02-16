@@ -4,6 +4,7 @@ import {
   hederaOperatorPrivateKey,
 } from "../client";
 import { createSoulboundToken } from "../token";
+import { z } from "zod";
 
 export type createEntityPermissionArgs = {
   name: string;
@@ -81,12 +82,12 @@ export const createEntityPermission = async ({
   name,
   symbol,
 }: createEntityPermissionArgs): Promise<TokenId> => {
-  name = `${name} Permission EMM`;
-  symbol = `${symbol}_P_EMM`;
+  name = `${name}`;
+  symbol = `${symbol}`;
 
   const entityPermissionId = await createSoulboundToken({
-    name: `${name} - EMM Permission`,
-    symbol: `${symbol}_P_EMM`,
+    name: name,
+    symbol: symbol,
     treasury: hederaOperatorId,
     adminKey: hederaOperatorPrivateKey.publicKey,
     treasuryKeyPrivate: hederaOperatorPrivateKey,

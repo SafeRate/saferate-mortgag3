@@ -1,8 +1,11 @@
+import { params } from "@ampt/sdk";
 import { TTokenMetadata } from "../token";
 import { NFTStorage } from "nft.storage";
 import { getBlobFromCid } from "../storage";
 
-const token = process.env["NFT_STORAGE_KEY"];
+const token = params("NFT_STORAGE_KEY");
+const image = params("TOKEN_LOGO_URI");
+
 if (!token) {
   throw new Error("NFT_STORAGE_KEY not set");
 }

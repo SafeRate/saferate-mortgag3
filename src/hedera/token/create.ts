@@ -5,11 +5,12 @@ import {
     PrivateKey,
     Timestamp,
     TokenCreateTransaction,
+    TokenDeleteTransaction,
     TokenId,
     TokenSupplyType,
     TokenType,
   } from "@hashgraph/sdk";
-  import { hederaClient } from "../client";
+  import { hederaClient, hederaOperatorPrivateKey } from "../client";
   
   export type createSoulboundTokenArgs = {
     name: string;
@@ -80,6 +81,34 @@ import {
     pauseKey?: Key;
     treasuryKeyPrivate: PrivateKey;
     adminKeyPrivate: PrivateKey;
+  };
+
+  export const deleteToken = async (tokenId: TokenId) => {
+    
+    // Create the transaction and freeze the unsigned transaction for manual sign
+    const transaction = new TokenDeleteTransaction()
+    .setTokenId(tokenId)
+    .freezeWith(hederaClient);
+
+    // Sign with the admin private key of the token 
+    const signTx = await transaction.sign(hederaOperatorPrivateKey);
+    
+    // Submit the transaction to a Hedera network    
+    const txResponse = await signTx.execute(hederaClient);
+
+    //Request the receipt of the transaction
+    const receipt = await txResponse.getReceipt(hederaClient);    
+        
+    //Obtain the transaction consensus status
+    const transactionStatus = receipt.status;
+
+    console.log(`The transaction consensus status is ${transactionStatus}`);
+
+    if (transactionStatus.toString() !== "SUCCESS") {
+      throw new Error("Failed to delete token");
+    } else {
+      return true;
+    }    
   };
   
   export const createSoulboundToken = async ({

@@ -3,26 +3,95 @@ import { z } from "zod";
 export const ZHederaIdRegex = z.string().regex(/^0.0.\d{1,9}$/);
 export const ZHederaEvmRegex = z.string().regex(/^0x[0-9a-fA-F]{40}$/);
 export const ZHederaTransactionRegex = z.string();
-
 export const ZDateRegex = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export enum EAssetCredentialTokenSymbol {
+  UNSDG = "UNSDG",
+  LOANREVIEW = "LOANREVIEW",
+  SETTLEMENT = "SETTLEMENT",
+  TITLEINSURANCE = "TITLEINSURANCE",
+  GOVDOCRECORD = "GOVDOCRECORD",
+  APPRAISAL = "APPRAISAL",
+  HAZARDINSURANCE = "HAZARDINSURANCE",
+  LOANSTATUS = "LOANSTATUS",
+  GUARANTEE = "GUARANTEE",
+  IMPACT = "IMPACT",
+};
+export const ZAssetCredentialTokenSymbol = z.nativeEnum(EAssetCredentialTokenSymbol);
+
+export enum EEntityPermissionSymbol {
+  APPRAISER = "APPRAISER",
+  AUDITOR = "AUDITOR",
+  BORROWER = "BORROWER",
+  DEVELOPER = "DEVELOPER",
+  DOCUMENTRECORDER = "DOCUMENTRECORDER",
+  GUARANTOR = "GUARANTOR",
+  IMPACTREVIEWER = "IMPACTREVIEWER",
+  INVESTOR = "INVESTOR",
+  LENDER = "LENDER",
+  LOANREVIEWER = "LOANREVIEWER",
+  SERVICER = "SERVICER",
+  SETTLEMENTAGENT = "SETTLEMENTAGENT",
+  TITLEINSURANCE = "TITLEINSURANCE",
+};
+export const ZEntityPermissionSymbol = z.nativeEnum(EEntityPermissionSymbol);
+
+export enum EAccountingTokenSymbol {
+  PrincipalOutstanding = "PRINCIPAL_OUTSTANDING_USD",
+  PrincipalPaid = "PRINCIPAL_PAID_USD",
+  PrincipalLost = "PRINCIPAL_LOST_USD",
+  PrincipalRecovered = "PRINCIPAL_RECOVERED_USD",
+  InterestAccrued = "INTEREST_ACCRUED_USD",
+  InterestPaid = "INTEREST_PAID_USD",
+  InterestLost = "INTEREST_LOST_USD",
+  InterestRecovered = "INTEREST_RECOVERED_USD",
+  FeesAccrued = "FEES_ACCRUED_USD",
+  FeesPaid = "FEES_PAID_USD",
+  FeesLost = "FEES_LOST_USD",
+  FeesRecovered = "FEES_RECOVERED_USD",
+  AdvancePaymentsPaid = "ADVANCE_PAYMENTS_PAID_USD",
+  AdvancePaymentsRedeemed = "ADVANCE_PAYMENTS_REDEEMED_USD",
+  EscrowAccrued = "ESCROW_ACCRUED_USD",
+  EscrowPaid = "ESCROW_PAID_USD",
+  EscrowRedeemed = "ESCROW_REDEEMED_USD",
+  EscrowLost = "ESCROW_LOST_USD",
+  EscrowRecovered = "ESCROW_RECOVERED_USD",
+};
+export const ZAccountingTokenSymbol = z.nativeEnum(EAccountingTokenSymbol);
+
+export const ZTokenSymbol = z.union([ZAccountingTokenSymbol, ZAssetCredentialTokenSymbol, ZEntityPermissionSymbol]);
+
+export enum ETokenTypes {
+  FUNGIBLE = "fungible",
+  NON_FUNGIBLE = "non-fungible",
+};
+export const ZTokenTypes = z.nativeEnum(ETokenTypes);
+
+export enum ETokenCategory {
+  ACCOUNTING = "accounting",
+  ASSET_CREDENTIAL = "asset-credential",
+  ENTITY_PERMISSION = "entity-permission",
+}
+export const ZTokenCategory = z.nativeEnum(ETokenCategory);
 
 export enum Language {
     ENGLISH = "en",
     SPANISH = "es",
-  }
+  };
    
 export const ZLanguage = z.nativeEnum(Language);
 
 export enum Locale {
     ENGLISH_US = "en-US",
     SPANISH_MEXICO = "es-MX",
-  }
-  export const ZLocale = z.nativeEnum(Locale);
+  };
+export const ZLocale = z.nativeEnum(Locale);
 
 export enum Currency {
     USD = "USD",
-  }
-  export const ZCurrency = z.nativeEnum(Currency);
+  };
+
+export const ZCurrency = z.nativeEnum(Currency);
 
 export enum MimeTypes {
     aac = "audio/aac",
@@ -97,14 +166,14 @@ export enum MimeTypes {
     _3gp = "video/3gpp",
     _3g2 = "video/3gpp2",
     _7z = "application/x-7z-compressed",
-  }
+  };
   export const ZMimeType = z.nativeEnum(MimeTypes);
   
   export enum AmoritizationType {
     FULL = "full",
     INTEREST_ONLY = "interest only",
     PARTIAL = "partial",
-  }
+  };
   export const ZAmoritizationType = z.nativeEnum(AmoritizationType);
   
   export enum AccrualDayCount {
@@ -113,26 +182,26 @@ export enum MimeTypes {
     ACTUAL_ACTUAL = "actual/actual",
     THIRTY_360 = "30/360",
     THIRTY_365 = "30/365",
-  }
+  };
   export const ZAccrualDayCount = z.nativeEnum(AccrualDayCount);
   
   export enum Occupancy {
     PRIMARY = "primary",
     SECONDARY = "secondary",
     INVESTMENT = "investment",
-  }
+  };
   export const ZOccupancy = z.nativeEnum(Occupancy);
   
   export enum InterestRateType {
     ADJUSTABLE = "adjustable",
     FIXED = "fixed",
-  }
+  };
   export const ZInterestRateType = z.nativeEnum(InterestRateType);
   
   export enum ClosedLoanType {
     HELOC = "heloc",
     MORTGAGE = "mortgage",
-  }
+  };
   export const ZClosedLoanType = z.nativeEnum(ClosedLoanType);
 
 export enum CredentialTokenType {
@@ -146,7 +215,7 @@ export enum CredentialTokenType {
   Settlement = "Settlement",
   SDG = "SDG",
   TitleInsurance = "TitleInsurance",
-}
+};
 export const ZCredentialTokenType = z.nativeEnum(CredentialTokenType);
 
 export enum PermissionTokenType {
@@ -163,7 +232,7 @@ export enum PermissionTokenType {
   Servicer = "Servicer",
   Settlement = "Settlement",
   TitleInsurance = "Title Insurance",
-}
+};
 
 export const ZPermissionTokenType = z.nativeEnum(PermissionTokenType);
 
@@ -173,7 +242,7 @@ export enum ActionType {
   CREATE_LOAN = "CREATE LOAN",
   REMOVE_LOAN_CREDENTIAL = "REMOVE LOAN CREDENTIAL",
   UPDATE_LOAN_STATUS = "UPDATE LOAN STATUS",
-}
+};
 export const ZActionType = z.nativeEnum(ActionType);
 
 export const ZTopicAction = z.object({
@@ -418,6 +487,9 @@ export const ZTokenLoanClosedMetadata = z.object({
   term: z.number().gte(0),
 });
 export type TTokenLoanClosedMetadata = z.infer<typeof ZTokenLoanClosedMetadata>;
+
+export const ZTokenAdditionalMetadata = z.union([ZSDGGoalTokenMetadata, ZImpactTokenMetadata, ZLoanReviewTokenMetadata, ZLoanStatusTokenMetadata, ZSettlementTokenMetadata, ZAppraisalTokenMetadata, ZGovernmentDocumentsTokenMetadata, ZGuaranteeTokenMetadata, ZHazardsInsuranceTokenMetadata]);
+export type TTokenAdditionalMetadata = z.infer<typeof ZTokenAdditionalMetadata>;
 
 export const SDGGoals: TSDGGoals = [
   {

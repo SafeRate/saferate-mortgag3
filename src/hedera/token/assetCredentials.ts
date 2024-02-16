@@ -4,6 +4,18 @@ import {
   hederaOperatorPrivateKey,
 } from "../client";
 import { TokenId, TokenSupplyType } from "@hashgraph/sdk";
+import { z } from "zod";
+import { MimeTypes, TSDGGoalTokenMetadata, TTokenAdditionalMetadata, ZSDGGoalTokenMetadata, ZTokenAdditionalMetadata } from "../types";
+import { TTokenMetadata, getStandardTokenImage, validateTokenMetadata } from "./metadata";
+import { getBlobFromCid } from "../storage";
+
+export const getMetadataForUNSDGToken = async (metadata:TSDGGoalTokenMetadata) => {
+  const safeParseResult = ZSDGGoalTokenMetadata.safeParse(metadata);
+  if (!safeParseResult.success) {
+    throw new Error("Invalid arguments for UNSDG token metadata");
+  }
+
+}
 
 export const createAssetCredentials = async () => {
   await createAssetCredentialSoulboundToken({
@@ -66,12 +78,10 @@ export const createAssetCredentialSoulboundToken = async ({
   name,
   symbol,
 }: createAssetCredentialArgs): Promise<TokenId> => {
-  name = `${name} - EMM Credential`;
-  symbol = `${symbol}_C_EMM`;
 
   const assetCredentialTokenId = await createSoulboundToken({
-    name,
-    symbol,
+    name: name,
+    symbol: symbol,
     treasury: hederaOperatorId,
     adminKey: hederaOperatorPrivateKey.publicKey,
     treasuryKeyPrivate: hederaOperatorPrivateKey,

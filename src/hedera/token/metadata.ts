@@ -1,7 +1,8 @@
 import z from "zod";
-import { ZMimeType, ZLanguage, MimeTypes } from "../types";
+import { ZMimeType, ZLanguage, MimeTypes, ZTokenAdditionalMetadata } from "../types";
 import { Validator, defaultSchemaVersion } from "@hashgraph/nft-utilities";
 import { Blob } from "buffer";
+import { hederaOperatorId } from "../client";
 
 // See reference: https://docs.hedera.com/hedera/tutorials/token/structure-your-token-metadata-using-json-schema-v2
 // See also: https://www.npmjs.com/package/@hashgraph/nft-utilities
@@ -37,7 +38,7 @@ export const ZTokenMetadata = z.object({
   image: z.string().or(z.instanceof(Blob)),
   localalizations: ZTokenMetadataLocalization.nullish(),
   name: z.string(),
-  properties: z.any().nullish(),
+  properties: ZTokenAdditionalMetadata.nullish(),
   type: ZMimeType,
 });
 
@@ -53,30 +54,33 @@ export const getStandardTokenImage = (): string => {
   return tokenImageLocation;
 };
 
-export type createMinimumTokenMetadataWithPropertiesArgs = {
-  description: string;
-  name: string;
-  properties?: any;
-};
-
-export const createMinimumTokenMetadataWithProperties = ({
-  description,
-  name,
-  properties,
-}: createMinimumTokenMetadataWithPropertiesArgs): TTokenMetadata => {
-  const metadata: TTokenMetadata = {
-    description,
+export const ZGetNFTMetadataBasicArgs = z.object({
+  description: z.string(),
+  name: z.string(),
+  properties: ZTokenAdditionalMetadata
+});
+export type TGetNFTMetadataBasicArgs = z.infer<typeof ZGetNFTMetadataBasicArgs>;
+export const getNFTMetadata = ({description, name, properties}:TGetNFTMetadataBasicArgs):TTokenMetadata => {
+  const metadata = {
+    attributes: [],
+    checksum: null,
+    creator: hederaOperatorId.toString(),
+    createorDID: null,
+    description: description,
+    files: [],
+    format: null,
     image: getStandardTokenImage(),
-    name,
-    properties,
+    localalizations: null,
+    name: name,
+    properties: properties,    
     type: MimeTypes.png,
   };
 
   // Validate token metadata
+  // Will throw an error if invalid  
   validateTokenMetadata(metadata);
-
   return metadata;
-};
+}
 
 export const validateTokenMetadata = (tokenMetadata: TTokenMetadata) => {
   const version = "2.0.0";

@@ -5,10 +5,12 @@ import {
 } from "../client";
 import { createToken } from "../token";
 import { Currency } from "../types";
+import { z } from "zod";
 
 export type createAccountingForCurrencyArgs = {
   currency: Currency;
 };
+
 
 export const createAccountingForCurrency = async ({
   currency,
@@ -120,9 +122,10 @@ export const createAccounting = async ({
   name,
   symbol,
 }: createAccountingArgs) => {
-  const tokenId = await createToken({
-    name: `${name} USD Accounting EMM`,
-    symbol: `${symbol}_USD_EMM`,
+
+  const accountingTokenId = await createToken({
+    name: name,
+    symbol: symbol,
     decimals: 2,
     initialSupply: 0,
     supplyType: TokenSupplyType.Infinite,
@@ -134,4 +137,12 @@ export const createAccounting = async ({
     adminKeyPrivate: hederaOperatorPrivateKey,
     supplyKey: hederaOperatorPrivateKey.publicKey,
   });
+
+
+  console.log(`=== ${name} Created ===`);
+  console.log(`=== Symbol: ${symbol} ===`);
+  console.log(`=== Permission ID: ${accountingTokenId} ===`);
+  console.log(`=====================================`);
+
+  return accountingTokenId;
 };

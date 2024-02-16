@@ -8,7 +8,6 @@ import {
     getAccountBalance,
     getAccountBalanceForContract,
     getAccountBalanceForToken,
-    getSafeRateEntity,
   } from "../account";
   import {
     associateTokensWithAccount,
