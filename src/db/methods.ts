@@ -75,9 +75,21 @@ export const collectionDelete = async (dbCollection:EDbCollection):Promise<numbe
 
 export const collectionGet = async (dbCollection:EDbCollection):Promise<TDbItem[]> => {
     const result = await data.get(`${dbCollection}:*`);
-    if (Array.isArray(result)) {
-        return result;
-    } else {
-        return [];
+    if (result?.items) {
+        const items = result.items;
+        if (Array.isArray(items)) {
+            const values:TDbItem[] = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.value) {
+                    const value = item.value as TDbItem;
+                    values.push(value);
+                }
+            }
+            return values;
+        } else {
+            return [];
+        }
     }
+    return [];
 };

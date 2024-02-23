@@ -1,2 +1,2 @@
 export * from "./cid";
-export * from "./nftStorage";
+export * from "./pinata";

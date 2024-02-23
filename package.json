@@ -13,8 +13,8 @@
     "@ampt/sdk": "^1",
     "@hashgraph/nft-utilities": "^2.4.1",
     "@hashgraph/sdk": "^2.42.0-beta.1",
+    "@pinata/sdk": "^2.1.0",
     "hono": "^3",
-    "nft.storage": "^7.1.1",
     "zod": "^3.22.4"
   },
   "ampt": {

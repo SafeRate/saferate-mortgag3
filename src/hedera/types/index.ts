@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { boolean, z } from "zod";
 
 export const ZHederaIdRegex = z.string().regex(/^0.0.\d{1,9}$/);
 export const ZHederaEvmRegex = z.string().regex(/^0x[0-9a-fA-F]{40}$/);
@@ -19,6 +19,20 @@ export enum EAssetCredentialTokenSymbol {
 };
 export const ZAssetCredentialTokenSymbol = z.nativeEnum(EAssetCredentialTokenSymbol);
 
+export enum EAssetCredentialTokenName {
+  UNSDG = "United Nations Sustainable Development Goals",
+  LOANREVIEW = "Loan Review",
+  SETTLEMENT = "Settlement",
+  TITLEINSURANCE = "Title Insurance",
+  GOVDOCRECORD = "Government Document Record",
+  APPRAISAL = "Appraisal",
+  HAZARDINSURANCE = "Hazard Insurance",
+  LOANSTATUS = "Loan Status",
+  GUARANTEE = "Guarantee",
+  IMPACT = "Impact",
+};
+export const ZAssetCredentialTokenName = z.nativeEnum(EAssetCredentialTokenName);
+
 export enum EEntityPermissionSymbol {
   APPRAISER = "APPRAISER",
   AUDITOR = "AUDITOR",
@@ -32,34 +46,80 @@ export enum EEntityPermissionSymbol {
   LOANREVIEWER = "LOANREVIEWER",
   SERVICER = "SERVICER",
   SETTLEMENTAGENT = "SETTLEMENTAGENT",
-  TITLEINSURANCE = "TITLEINSURANCE",
+  TITLEINSURER = "TITLEINSURER",
 };
 export const ZEntityPermissionSymbol = z.nativeEnum(EEntityPermissionSymbol);
 
+export enum EEntityPermissionName {
+  APPRAISER = "Appraiser",
+  AUDITOR = "Auditor",
+  BORROWER = "Borrower",
+  DEVELOPER = "Developer",
+  DOCUMENTRECORDER = "Document Recorder",
+  GUARANTOR = "Guarantor",
+  IMPACTREVIEWER = "Impact Reviewer",
+  INVESTOR = "Investor",
+  LENDER = "Lender",
+  LOANREVIEWER = "Loan Reviewer",
+  SERVICER = "Serviceer",
+  SETTLEMENTAGENT = "Settlement Agent",
+  TITLEINSURER = "Title Insurer",
+};
+export const ZEntityPermissionName = z.nativeEnum(EEntityPermissionName);
+
 export enum EAccountingTokenSymbol {
-  PrincipalOutstanding = "PRINCIPAL_OUTSTANDING_USD",
-  PrincipalPaid = "PRINCIPAL_PAID_USD",
-  PrincipalLost = "PRINCIPAL_LOST_USD",
-  PrincipalRecovered = "PRINCIPAL_RECOVERED_USD",
-  InterestAccrued = "INTEREST_ACCRUED_USD",
-  InterestPaid = "INTEREST_PAID_USD",
-  InterestLost = "INTEREST_LOST_USD",
-  InterestRecovered = "INTEREST_RECOVERED_USD",
-  FeesAccrued = "FEES_ACCRUED_USD",
-  FeesPaid = "FEES_PAID_USD",
-  FeesLost = "FEES_LOST_USD",
-  FeesRecovered = "FEES_RECOVERED_USD",
-  AdvancePaymentsPaid = "ADVANCE_PAYMENTS_PAID_USD",
-  AdvancePaymentsRedeemed = "ADVANCE_PAYMENTS_REDEEMED_USD",
-  EscrowAccrued = "ESCROW_ACCRUED_USD",
-  EscrowPaid = "ESCROW_PAID_USD",
-  EscrowRedeemed = "ESCROW_REDEEMED_USD",
-  EscrowLost = "ESCROW_LOST_USD",
-  EscrowRecovered = "ESCROW_RECOVERED_USD",
+  PRINCIPALOUTSTANDING = "PRINCIPAL_OUTSTANDING_USD",
+  PRINCIPALPAID = "PRINCIPAL_PAID_USD",
+  PRINCIPALLOST = "PRINCIPAL_LOST_USD",
+  PRINCIPALRECOVERED = "PRINCIPAL_RECOVERED_USD",
+  INTERESTACCRUED = "INTEREST_ACCRUED_USD",
+  INTERESTPAID = "INTEREST_PAID_USD",
+  INTERESTLOST = "INTEREST_LOST_USD",
+  INTERESTRECOVERED = "INTEREST_RECOVERED_USD",
+  FEESACCRUED = "FEES_ACCRUED_USD",
+  FEESPAID = "FEES_PAID_USD",
+  FEESLOST = "FEES_LOST_USD",
+  FEESRECOVERED = "FEES_RECOVERED_USD",
+  ADVANCEPAYMENTSPAID = "ADVANCE_PAYMENTS_PAID_USD",
+  ADVANCEPAYMENTREDEEMED = "ADVANCE_PAYMENTS_REDEEMED_USD",
+  ESCROWACCRUED = "ESCROW_ACCRUED_USD",
+  ESCROWPAID = "ESCROW_PAID_USD",
+  ESCROWREDEEMED = "ESCROW_REDEEMED_USD",
+  ESCROWLOST = "ESCROW_LOST_USD",
+  ESCROWRECOVERED = "ESCROW_RECOVERED_USD",
 };
 export const ZAccountingTokenSymbol = z.nativeEnum(EAccountingTokenSymbol);
 
+export enum EAccountingTokenName {
+  PRINCIPALOUTSTANDING = "Principal Outstanding USD",
+  PRINCIPALPAID = "Principal Paid USD",
+  PRINCIPALLOST = "Principal Lost USD",
+  PRINCIPALRECOVERED = "Principal Recovered USD",
+  INTERESTACCRUED = "Interest Accrued USD",
+  INTERESTPAID = "Interest Paid USD",
+  INTERESTLOST = "Interest Lost USD",
+  INTERESTRECOVERED = "Interest Recovered USD",
+  FEESACCRUED = "Fees Accrued USD",
+  FEESPAID = "Fees Paid USD",
+  FEESLOST = "Fees Lost USD",
+  FEESRECOVERED = "Fees Recovered USD",
+  ADVANCEPAYMENTSPAID = "Advance Payments Paid USD",
+  ADVANCEPAYMENTREDEEMED = "Advance Payments Redeemed USD",
+  ESCROWACCRUED = "Escrow Accrued USD",
+  ESCROWPAID = "Escrow Paid USD",
+  ESCROWREDEEMED = "Escrow Redeemed USD",
+  ESCROWLOST = "Escrow Lost USD",
+  ESCROWRECOVERED = "Escrow Recovered USD",
+};
+export const ZAccountingTokenName = z.nativeEnum(EAccountingTokenName);
+
 export const ZTokenSymbol = z.union([ZAccountingTokenSymbol, ZAssetCredentialTokenSymbol, ZEntityPermissionSymbol]);
+export const ZTokenName = z.union([ZAccountingTokenName, ZAssetCredentialTokenName, ZEntityPermissionName]);
+
+const ZGetTokenDetailsForSymbol = z.object({
+  symbol: ZTokenSymbol,
+});
+type TGetTokenDetailsForSymbol = z.infer<typeof ZGetTokenDetailsForSymbol>;
 
 export enum ETokenTypes {
   FUNGIBLE = "fungible",
@@ -73,6 +133,316 @@ export enum ETokenCategory {
   ENTITY_PERMISSION = "entity-permission",
 }
 export const ZTokenCategory = z.nativeEnum(ETokenCategory);
+
+const ZTokenDetailsForSymbol = z.object({
+  symbol: ZTokenSymbol,
+  name: ZTokenName,
+  category: ZTokenCategory,
+  type: ZTokenTypes,
+});
+type TTokenDetailsForSymbol = z.infer<typeof ZTokenDetailsForSymbol>;
+
+export const getTokenDetailsForSymbol = ({symbol}:TGetTokenDetailsForSymbol):TTokenDetailsForSymbol | null => {
+
+  switch (symbol) {
+    case EAssetCredentialTokenSymbol.UNSDG:
+      return {
+        symbol: EAssetCredentialTokenSymbol.UNSDG,
+        name: EAssetCredentialTokenName.UNSDG,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.LOANREVIEW:
+      return {
+        symbol: EAssetCredentialTokenSymbol.LOANREVIEW,
+        name: EAssetCredentialTokenName.LOANREVIEW,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.SETTLEMENT:
+      return {
+        symbol: EAssetCredentialTokenSymbol.SETTLEMENT,
+        name: EAssetCredentialTokenName.SETTLEMENT,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.TITLEINSURANCE:
+      return {
+        symbol: EAssetCredentialTokenSymbol.TITLEINSURANCE,
+        name: EAssetCredentialTokenName.TITLEINSURANCE,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.GOVDOCRECORD:
+      return {
+        symbol: EAssetCredentialTokenSymbol.GOVDOCRECORD,
+        name: EAssetCredentialTokenName.GOVDOCRECORD,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.APPRAISAL:
+      return {
+        symbol: EAssetCredentialTokenSymbol.APPRAISAL,
+        name: EAssetCredentialTokenName.APPRAISAL,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.HAZARDINSURANCE:
+      return {
+        symbol: EAssetCredentialTokenSymbol.HAZARDINSURANCE,
+        name: EAssetCredentialTokenName.HAZARDINSURANCE,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.LOANSTATUS:
+      return {
+        symbol: EAssetCredentialTokenSymbol.LOANSTATUS,
+        name: EAssetCredentialTokenName.LOANSTATUS,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.GUARANTEE:
+      return {
+        symbol: EAssetCredentialTokenSymbol.GUARANTEE,
+        name: EAssetCredentialTokenName.GUARANTEE,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAssetCredentialTokenSymbol.IMPACT:
+      return {
+        symbol: EAssetCredentialTokenSymbol.IMPACT,
+        name: EAssetCredentialTokenName.IMPACT,
+        category: ETokenCategory.ASSET_CREDENTIAL,
+        type: ETokenTypes.NON_FUNGIBLE,
+      }; 
+    case EEntityPermissionSymbol.APPRAISER:
+      return {
+        symbol: EEntityPermissionSymbol.APPRAISER,
+        name: EEntityPermissionName.APPRAISER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.AUDITOR:
+      return {
+        symbol: EEntityPermissionSymbol.AUDITOR,
+        name: EEntityPermissionName.AUDITOR,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.BORROWER:
+      return {
+        symbol: EEntityPermissionSymbol.BORROWER,
+        name: EEntityPermissionName.BORROWER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.DEVELOPER:
+      return {
+        symbol: EEntityPermissionSymbol.DEVELOPER,
+        name: EEntityPermissionName.DEVELOPER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.DOCUMENTRECORDER:
+      return {
+        symbol: EEntityPermissionSymbol.DOCUMENTRECORDER,
+        name: EEntityPermissionName.DOCUMENTRECORDER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.GUARANTOR:
+      return {
+        symbol: EEntityPermissionSymbol.GUARANTOR,
+        name: EEntityPermissionName.GUARANTOR,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.IMPACTREVIEWER:
+      return {
+        symbol: EEntityPermissionSymbol.IMPACTREVIEWER,
+        name: EEntityPermissionName.IMPACTREVIEWER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.INVESTOR:
+      return {
+        symbol: EEntityPermissionSymbol.INVESTOR,
+        name: EEntityPermissionName.INVESTOR,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.LENDER:
+      return {
+        symbol: EEntityPermissionSymbol.LENDER,
+        name: EEntityPermissionName.LENDER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.LOANREVIEWER:
+      return {
+        symbol: EEntityPermissionSymbol.LOANREVIEWER,
+        name: EEntityPermissionName.LOANREVIEWER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.SERVICER:
+      return {
+        symbol: EEntityPermissionSymbol.SERVICER,
+        name: EEntityPermissionName.SERVICER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.SETTLEMENTAGENT:
+      return {
+        symbol: EEntityPermissionSymbol.SETTLEMENTAGENT,
+        name: EEntityPermissionName.SETTLEMENTAGENT,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };  
+    case EEntityPermissionSymbol.TITLEINSURER:
+      return {
+        symbol: EEntityPermissionSymbol.TITLEINSURER,
+        name: EEntityPermissionName.TITLEINSURER,
+        category: ETokenCategory.ENTITY_PERMISSION,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };     
+    case EAccountingTokenSymbol.PRINCIPALOUTSTANDING:
+      return {
+        symbol: EAccountingTokenSymbol.PRINCIPALOUTSTANDING,
+        name: EAccountingTokenName.PRINCIPALOUTSTANDING,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.PRINCIPALPAID:
+      return {
+        symbol: EAccountingTokenSymbol.PRINCIPALPAID,
+        name: EAccountingTokenName.PRINCIPALPAID,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.PRINCIPALLOST:
+      return {
+        symbol: EAccountingTokenSymbol.PRINCIPALLOST,
+        name: EAccountingTokenName.PRINCIPALLOST,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.PRINCIPALRECOVERED:
+      return {
+        symbol: EAccountingTokenSymbol.PRINCIPALRECOVERED,
+        name: EAccountingTokenName.PRINCIPALRECOVERED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.INTERESTACCRUED:
+      return {
+        symbol: EAccountingTokenSymbol.INTERESTACCRUED,
+        name: EAccountingTokenName.INTERESTACCRUED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.INTERESTPAID:
+      return {
+        symbol: EAccountingTokenSymbol.INTERESTPAID,
+        name: EAccountingTokenName.INTERESTPAID,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.INTERESTLOST:
+      return {
+        symbol: EAccountingTokenSymbol.INTERESTLOST,
+        name: EAccountingTokenName.INTERESTLOST,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.INTERESTRECOVERED:
+      return {
+        symbol: EAccountingTokenSymbol.INTERESTRECOVERED,
+        name: EAccountingTokenName.INTERESTRECOVERED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.FEESACCRUED:
+      return {
+        symbol: EAccountingTokenSymbol.FEESACCRUED,
+        name: EAccountingTokenName.FEESACCRUED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.FEESPAID:
+      return {
+        symbol: EAccountingTokenSymbol.FEESPAID,
+        name: EAccountingTokenName.FEESPAID,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.FEESLOST:
+      return {
+        symbol: EAccountingTokenSymbol.FEESLOST,
+        name: EAccountingTokenName.FEESLOST,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.FEESRECOVERED:
+      return {
+        symbol: EAccountingTokenSymbol.FEESRECOVERED,
+        name: EAccountingTokenName.FEESRECOVERED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ADVANCEPAYMENTSPAID:
+      return {
+        symbol: EAccountingTokenSymbol.ADVANCEPAYMENTSPAID,
+        name: EAccountingTokenName.ADVANCEPAYMENTSPAID,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ADVANCEPAYMENTREDEEMED:
+      return {
+        symbol: EAccountingTokenSymbol.ADVANCEPAYMENTREDEEMED,
+        name: EAccountingTokenName.ADVANCEPAYMENTREDEEMED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ESCROWACCRUED:
+      return {
+        symbol: EAccountingTokenSymbol.ESCROWACCRUED,
+        name: EAccountingTokenName.ESCROWACCRUED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ESCROWPAID:
+      return {
+        symbol: EAccountingTokenSymbol.ESCROWPAID,
+        name: EAccountingTokenName.ESCROWPAID,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ESCROWREDEEMED:
+      return {
+        symbol: EAccountingTokenSymbol.ESCROWREDEEMED,
+        name: EAccountingTokenName.ESCROWREDEEMED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ESCROWLOST:
+      return {
+        symbol: EAccountingTokenSymbol.ESCROWLOST,
+        name: EAccountingTokenName.ESCROWLOST,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };
+    case EAccountingTokenSymbol.ESCROWRECOVERED:
+      return {
+        symbol: EAccountingTokenSymbol.ESCROWRECOVERED,
+        name: EAccountingTokenName.ESCROWRECOVERED,
+        category: ETokenCategory.ACCOUNTING,
+        type: ETokenTypes.NON_FUNGIBLE,
+      };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+    default:
+      return null;
+  }
+};
 
 export enum Language {
     ENGLISH = "en",
@@ -265,8 +635,8 @@ export const ZTopicActionResult = z.object({
   scheduleId: ZHederaTransactionRegex,
   scheduleTransactionId: ZHederaTransactionRegex,
   success: z.boolean(),
-  reason: z.string().nullable(),
-  topicMessageId: ZHederaIdRegex.nullable(),
+  reason: z.string().nullish(),
+  topicMessageId: ZHederaIdRegex.nullish(),
 });
 export type TActionResult = z.infer<typeof ZTopicActionResult>;
 
@@ -278,7 +648,7 @@ export const ZPermissionCheck = z.object({
   entityProof: z.any(),
   loanProof: z.any(),
   success: z.boolean(),
-  reason: z.string().nullable(),
+  reason: z.string().nullish(),
 });
 export type TPermissionCheck = z.infer<typeof ZPermissionCheck>;
 
@@ -300,9 +670,9 @@ export type TSDGGoals = z.infer<typeof ZSDGGoals>;
 
 export const ZSDGGoalTokenMetadata = z.object({
   goal: ZSDGGoal,
+  loanId: ZHederaIdRegex,
   reviewerId: ZHederaIdRegex,
   reviewerName: z.string(),
-  signingTransaction: ZHederaTransactionRegex,
   target: ZSDGTarget,
 });
 export type TSDGGoalTokenMetadata = z.infer<typeof ZSDGGoalTokenMetadata>;
@@ -314,24 +684,28 @@ export const ZImpactTokenMetadata = z.object({
   constructionRenovation: z.boolean(),
   firstTimeBuyer: z.boolean(),
   impactDocumentation: z.string(),
-  loan: z.number().int().positive().finite(),
+  loanId: ZHederaIdRegex,
   minority: z.array(z.string()),
   profession: z.array(z.string()),
   reviewerId: ZHederaIdRegex,
   reviewerName: z.string(),
-  signingTransaction: ZHederaTransactionRegex,
 });
 export type TImpactTokenMetadata = z.infer<typeof ZImpactTokenMetadata>;
+
+export const ZPermissionTokenMetadata = z.object({
+  entityId: ZHederaIdRegex,
+  permissionName: ZEntityPermissionName,
+});
+export type TPermissionTokenMetadata = z.infer<typeof ZPermissionTokenMetadata>;
 
 export const ZLoanReviewTokenMetadata = z.object({
   documentation: z.string(),
   documentationVerified: z.boolean(),
-  loan: z.number().int().positive().finite(),
+  loanId: ZHederaIdRegex,
   name: z.string(),
   reviewerId: ZHederaIdRegex,
   reviewerName: z.string(),
-  riskRating: z.number().positive().int().finite().nullable(),
-  signingTransaction: ZHederaTransactionRegex,
+  riskRating: z.number().positive().int().finite().nullish(),
 });
 export type TLoanReviewTokenMetadata = z.infer<typeof ZLoanReviewTokenMetadata>;
 
@@ -339,8 +713,7 @@ export const ZGuaranteeTokenMetadata = z.object({
   documentation: z.string(),
   guarantorId: ZHederaIdRegex,
   guarantorName: z.string(),
-  loan: z.number().int().positive().finite(),
-  signingTransaction: ZHederaTransactionRegex,
+  loanId: ZHederaIdRegex,
 });
 export type TGuaranteeTokenMetadata = z.infer<typeof ZGuaranteeTokenMetadata>;
 
@@ -354,12 +727,12 @@ export const ZLoanStatusTokenMetadata = z.object({
 export type TLoanStatus = z.infer<typeof ZLoanStatusTokenMetadata>;
 
 export const ZSettlementTokenMetadata = z.object({
+  loanId: ZHederaIdRegex,
   payoffsConfirmed: z.boolean(),
   settlementCompany: z.string(),
   settlementDate: ZDateRegex,
   settlementDocumentation: z.string(),
   settlementProviderId: ZHederaIdRegex,
-  signingTransaction: ZHederaTransactionRegex,
 });
 export type TSettlementTokenMetadata = z.infer<typeof ZSettlementTokenMetadata>;
 
@@ -368,14 +741,14 @@ export const ZAppraisalTokenMetadata = z.object({
   appraisalDate: ZDateRegex,
   appraisalDocumentation: z.string(),
   appraisalValue: z.number().positive().int().finite(),
-  signingTransaction: ZHederaTransactionRegex,
+  loanId: ZHederaIdRegex,
 });
 export type TAppraisalTokenMetadata = z.infer<typeof ZAppraisalTokenMetadata>;
 
 export const ZGovernmentDocumentsTokenMetadata = z.object({
+  loanId: ZHederaIdRegex,
   recorderDocumentation: z.string(),
   recorderId: ZHederaIdRegex,
-  signingTransaction: ZHederaTransactionRegex,
 });
 export type TGovernmentDocumentsTokenMetadata = z.infer<
   typeof ZGovernmentDocumentsTokenMetadata
@@ -384,9 +757,9 @@ export type TGovernmentDocumentsTokenMetadata = z.infer<
 export const ZHazardsInsuranceTokenMetadata = z.object({
   coverageStart: ZDateRegex,
   coverageEnd: ZDateRegex,
-  insuranceCompany: z.string(),
-  insuranceId: ZHederaIdRegex,
-  signingTransaction: ZHederaTransactionRegex,
+  insurerCompany: z.string(),
+  insurerId: ZHederaIdRegex,
+  loanId: ZHederaIdRegex
 });
 export type THazardsInsuranceTokenMetadata = z.infer<
   typeof ZHazardsInsuranceTokenMetadata
@@ -441,8 +814,6 @@ export const ZMintPermissionTokenTopicMetadata = z.object({
   entityId: ZHederaIdRegex,
   permissionTokenId: ZHederaIdRegex,
   permissionTokenType: ZPermissionTokenType,
-  serialNumber: z.number().int().positive().finite(),
-  signatureTransaction: ZHederaTransactionRegex,
 });
 export type TMintPermissionTokenTopicMetadata = z.infer<
   typeof ZMintPermissionTokenTopicMetadata
@@ -452,16 +823,15 @@ export const ZTokenLoanClosedMetadata = z.object({
   accrualDayCountDay: ZAccrualDayCount,
   accrualDayCountPeriod: ZAccrualDayCount,
   active: z.boolean(),
-  adjustableRateId: ZHederaIdRegex.nullable(),
+  adjustableRateId: ZHederaIdRegex.nullish(),
   amoritization: ZAmoritizationType,
-  borrowerId: ZHederaIdRegex.nullable(),
-  collateralId: ZHederaIdRegex.nullable(),
+  borrowerIds: ZHederaIdRegex.array().nullish(),
+  collateralId: ZHederaIdRegex.nullish(),
   currency: ZCurrency,
-  escrowRecurring: z.number().nullable(),
-  guarantorId: ZHederaIdRegex.nullable(),
-  insurerId: ZHederaIdRegex.nullable(),
+  escrowRecurring: z.number().gte(0).nullish(),
+  guarantorId: ZHederaIdRegex.nullish(),
+  insurerId: ZHederaIdRegex.nullish(),
   interestRate: z.number().gte(0),
-  investorId: ZHederaIdRegex,
   lenderId: ZHederaIdRegex,
   loanAddress: ZHederaIdRegex,
   loanNumber: z.number().gte(0),
@@ -469,17 +839,17 @@ export const ZTokenLoanClosedMetadata = z.object({
   language: ZLanguage,
   locale: ZLocale,
   maturityDate: ZDateRegex,
-  nextStatementDate: ZDateRegex.nullable(),
-  nextRateDate: ZDateRegex.nullable(),
-  occupancy: ZOccupancy.nullable(),
+  nextStatementDate: ZDateRegex.nullish(),
+  nextRateDate: ZDateRegex.nullish(),
+  occupancy: ZOccupancy.nullish(),
   originationDate: ZDateRegex,
-  paymentRecurring: z.number().nullable(),
+  paymentRecurring: z.number().nullish(),
   paymentsPerYear: z.number().gte(0),
   precisionCurrency: z.number().gte(0),
   precisionInterest: z.number().gte(0),
   principal: z.number().gte(0),
-  prevStatementDate: ZDateRegex.nullable(),
-  prevRateDate: ZHederaIdRegex.nullable(),
+  prevStatementDate: ZDateRegex.nullish(),
+  prevRateDate: ZHederaIdRegex.nullish(),
   rateType: ZInterestRateType,
   serialNumber: z.number().gte(0),
   servicerId: ZHederaIdRegex,
@@ -488,7 +858,7 @@ export const ZTokenLoanClosedMetadata = z.object({
 });
 export type TTokenLoanClosedMetadata = z.infer<typeof ZTokenLoanClosedMetadata>;
 
-export const ZTokenAdditionalMetadata = z.union([ZSDGGoalTokenMetadata, ZImpactTokenMetadata, ZLoanReviewTokenMetadata, ZLoanStatusTokenMetadata, ZSettlementTokenMetadata, ZAppraisalTokenMetadata, ZGovernmentDocumentsTokenMetadata, ZGuaranteeTokenMetadata, ZHazardsInsuranceTokenMetadata]);
+export const ZTokenAdditionalMetadata = z.union([ZSDGGoalTokenMetadata, ZImpactTokenMetadata, ZLoanReviewTokenMetadata, ZLoanStatusTokenMetadata, ZSettlementTokenMetadata, ZAppraisalTokenMetadata, ZGovernmentDocumentsTokenMetadata, ZGuaranteeTokenMetadata, ZHazardsInsuranceTokenMetadata, ZPermissionTokenMetadata]);
 export type TTokenAdditionalMetadata = z.infer<typeof ZTokenAdditionalMetadata>;
 
 export const SDGGoals: TSDGGoals = [

@@ -1,5 +1,8 @@
 import { TokenMintTransaction, Hbar, TokenId } from "@hashgraph/sdk";
 import { hederaClient, hederaOperatorPrivateKey } from "../client";
+import { TTokenAdditionalMetadata } from "../types";
+import { storeNFTMetadata } from "./";
+import { getBufferArrayFromCid, getBufferFromCid } from "../storage";
 
 export type mintFungibleTokenArgs =  {
     amount: number;
@@ -37,16 +40,33 @@ export const mintFungibleTokens = async({amount, tokenId}:mintFungibleTokenArgs)
 };
 
 export type mintNonFungibleTokenArgs = {
-    metadataURI: string;
-    tokenId: TokenId;
+    additionalMetadata: TTokenAdditionalMetadata;
+    description: string;
+    name: string;
+    tokenIdStr: string;
 }
 
-export const mintNonFungibleToken = async ({metadataURI, tokenId}:mintNonFungibleTokenArgs) => {
+export const mintNonFungibleToken = async ({additionalMetadata, description, name, tokenIdStr}:mintNonFungibleTokenArgs) => {
+
+    const tokenId = TokenId.fromString(tokenIdStr);
+
+    console.log(`Minting NFT with token ID: ${tokenId.toString()}`);
+    console.log('Additional Metadata: ', additionalMetadata);
+    console.log(additionalMetadata);
+
+    const fullMetadataURI = await storeNFTMetadata({
+      additionalMetadata,
+      description,
+      name
+    });
+
+    // const fullMetadataURI = "ipfs://bafyreiezgnzimnibu4ns2simi7pjugi2pbwnf5e27etmldooxlbxmuqtru";
+    console.log('Metadata stored at: ', fullMetadataURI);
+    console.log(tokenId.toString());
 
     const transaction = await new TokenMintTransaction()
         .setTokenId(tokenId)
-        .setAmount(1)
-        .setMetadata([Buffer.from(metadataURI)])
+        .setMetadata(getBufferArrayFromCid({cid:fullMetadataURI}))
         .setMaxTransactionFee(new Hbar(20)) //Use when HBAR is under 10 cents
         .freezeWith(hederaClient);
 

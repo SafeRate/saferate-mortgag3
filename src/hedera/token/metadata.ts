@@ -3,6 +3,10 @@ import { ZMimeType, ZLanguage, MimeTypes, ZTokenAdditionalMetadata } from "../ty
 import { Validator, defaultSchemaVersion } from "@hashgraph/nft-utilities";
 import { Blob } from "buffer";
 import { hederaOperatorId } from "../client";
+import { getBlobFromCid, pinNFTMetadataToIPFS, testPinataAuthentication, uploadMetadataToNFTStorage } from "../storage";
+import { params } from "@ampt/sdk";
+import { EncodedURL } from "nft.storage/dist/src/lib/interface";
+import pinJSONToIPFS from "@pinata/sdk/types/commands/pinning/pinJSONToIPFS";
 
 // See reference: https://docs.hedera.com/hedera/tutorials/token/structure-your-token-metadata-using-json-schema-v2
 // See also: https://www.npmjs.com/package/@hashgraph/nft-utilities
@@ -45,10 +49,12 @@ export const ZTokenMetadata = z.object({
 export type TTokenMetadata = z.infer<typeof ZTokenMetadata>;
 
 export const getStandardTokenImage = (): string => {
-  const tokenImageLocation = process.env["TOKEN_IMAGE_LOCATION"];
+  const tokenImageLocation = params("TOKEN_LOGO_URI");
+  console.log("Token logo URI", tokenImageLocation);
+  console.log('Token image location: ', tokenImageLocation)
 
   if (!tokenImageLocation) {
-    throw new Error("TOKEN_IMAGE_LOCATION not set");
+    throw new Error("TOKEN_LOGO_URI not set");
   }
 
   return tokenImageLocation;
@@ -57,29 +63,33 @@ export const getStandardTokenImage = (): string => {
 export const ZGetNFTMetadataBasicArgs = z.object({
   description: z.string(),
   name: z.string(),
-  properties: ZTokenAdditionalMetadata
+  additionalMetadata: ZTokenAdditionalMetadata
 });
 export type TGetNFTMetadataBasicArgs = z.infer<typeof ZGetNFTMetadataBasicArgs>;
-export const getNFTMetadata = ({description, name, properties}:TGetNFTMetadataBasicArgs):TTokenMetadata => {
+export const storeNFTMetadata = async ({additionalMetadata, description, name}:TGetNFTMetadataBasicArgs):Promise<EncodedURL> => {
   const metadata = {
     attributes: [],
-    checksum: null,
     creator: hederaOperatorId.toString(),
     createorDID: null,
     description: description,
     files: [],
-    format: null,
+    format: "HIP412@2.0.0",
     image: getStandardTokenImage(),
     localalizations: null,
     name: name,
-    properties: properties,    
+    properties: additionalMetadata,    
     type: MimeTypes.png,
   };
 
-  // Validate token metadata
-  // Will throw an error if invalid  
   validateTokenMetadata(metadata);
-  return metadata;
+  const pinResult = await pinNFTMetadataToIPFS({metadata});
+
+  if (!pinResult.IpfsHash) {
+    throw new Error("Unable to pin metadata to IPFS");
+  }
+
+  const ipfsAddress = `ipfs://${pinResult.IpfsHash}`;
+  return ipfsAddress;
 }
 
 export const validateTokenMetadata = (tokenMetadata: TTokenMetadata) => {
