@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { createHederaAccount } from "./src/hedera/account";
 import { z } from "zod";
-import { ETokenCategory, ETokenTypes, ZHederaIdRegex, ZTokenCategory, ZTokenSymbol, ZTokenTypes } from "./src/hedera/types";
+import { ETokenCategory, ETokenTypes, ZHederaIdRegex, ZTokenAdditionalMetadata, ZTokenSymbol, getTokenDetailsForSymbol } from "./src/hedera/types";
 import { mintFungibleTokens, mintNonFungibleToken } from "./src/hedera/token/mint";
-import { TTokenData, ZDbCollection, collectionDelete, collectionGet, getAccount, getToken, setToken } from "./src/db";
-import { createAccounting, createAssetCredentialSoulboundToken, createEntityPermission } from "./src/hedera/token";
+import { TAccountData, TTokenData, ZDbCollection, collectionDelete, collectionGet, getAccount, getToken, setAccount, setToken } from "./src/db";
+import { associateTokensWithAccount, createAccounting, createAssetCredentialSoulboundToken, createEntityPermission } from "./src/hedera/token";
 
 const app = new Hono();
 
@@ -30,22 +30,22 @@ const ZDataGetRequest = z.object({
 export type TDataGetRequest = z.infer<typeof ZDataGetRequest>;
 
 export const ZTokenCreateRequest = z.object({
-  category: ZTokenCategory,
-  name: z.string(),
   symbol: ZTokenSymbol,
-  tokenType: ZTokenTypes,
 });
 export type TTokenCreateRequest = z.infer<typeof ZTokenCreateRequest>;
 
 export const ZTokenGetRequest = z.object({
-  tokenId: ZHederaIdRegex,
+  tokenId: ZTokenSymbol,
 });
 export type TTokenGetRequest = z.infer<typeof ZTokenGetRequest>;
 
 export const ZTokenMintRequest = z.object({
   amount: z.number().gte(0),
-  symbol: z.string(),
-  tokenId: ZHederaIdRegex,
+  description: z.string().nullish(),
+  metadata: ZTokenAdditionalMetadata.nullish(),
+  name: z.string().nullish(),
+  symbol: ZTokenSymbol,
+  tokenId: ZHederaIdRegex
 });
 export type TTokenMintRequest = z.infer<typeof ZTokenMintRequest>;
 
@@ -76,7 +76,13 @@ app.post("/accounts/create", async (c) => {
     privateKey: privateKeyStr,    
   };
 
-  await data.set(`accounts:${accountIdStr}`, accountToStore);
+  await setAccount(
+    {
+      key: accountIdStr,
+      value: accountToStore
+    }
+  );
+
   return c.json(accountToStore);
 });
 
@@ -149,22 +155,28 @@ app.post("/tokens/create", async (c) => {
   };
 
   const args = safeParseResult.data;
+
+  const tokenDetails = getTokenDetailsForSymbol({symbol: args.symbol});
+  if (tokenDetails === null) {
+    return c.json({ message: `Token symbol not found: ${args.symbol}` }, 404);
+  }
+
   let tokenId;
 
-  if (args.category === ETokenCategory.ACCOUNTING) {
+  if (tokenDetails.category === ETokenCategory.ACCOUNTING) {
     tokenId = await createAccounting({
-      name: args.name,
-      symbol: args.symbol,
+      name: tokenDetails.name,
+      symbol: tokenDetails.symbol,
     });
-  } else if (args.category === ETokenCategory.ASSET_CREDENTIAL) {
+  } else if (tokenDetails.category === ETokenCategory.ASSET_CREDENTIAL) {
     tokenId = await createAssetCredentialSoulboundToken({
-      name: args.name,
-      symbol: args.symbol,
+      name: tokenDetails.name,
+      symbol: tokenDetails.symbol,
     });
-  } else if (args.category === ETokenCategory.ENTITY_PERMISSION) {
+  } else if (tokenDetails.category === ETokenCategory.ENTITY_PERMISSION) {
     tokenId = await createEntityPermission({
-      name: args.name,
-      symbol: args.symbol,
+      name: tokenDetails.name,
+      symbol: tokenDetails.symbol,
     });
   }
 
@@ -173,11 +185,11 @@ app.post("/tokens/create", async (c) => {
   }
 
   const tokenData:TTokenData = {
-    category: args.category,
-    name: args.name,
-    symbol: args.symbol,
+    category: tokenDetails.category,
+    name: tokenDetails.name,
+    symbol: tokenDetails.symbol,
     tokenId: tokenId.toString(),
-    tokenType: ETokenTypes.FUNGIBLE,
+    tokenType: tokenDetails.type,
   };
 
   const result = await setToken({key: tokenData.symbol, value: tokenData});
@@ -193,24 +205,47 @@ app.post("/tokens/mint", async (c) => {
   };
 
   const args = safeParseResult.data;
-  const tokenItem = await getToken(args.symbol);
+  const { amount, description, metadata, name, symbol, tokenId}  = args;
+
+  const tokenItem = await getToken(symbol);
   if (tokenItem === null) {
     return c.json({ message: `Token not found: ${args.symbol}` }, 404);
   }
 
   if (tokenItem.tokenType === ETokenTypes.FUNGIBLE) {
     const mintResult = await mintFungibleTokens({
-      amount: args.amount,
+      amount: amount,
       tokenId: tokenItem.tokenId,
     });
 
     return c.json({ success: mintResult });
+
   } else {
 
+    if (!name) {
+      return c.json({ message: "name is needed to mint NFT" }, 400);
+    }
+
+    if (!description) { 
+      return c.json({ message: "description is needed to mint NFT" }, 400);
+    }
+
+    if (!metadata) {
+      return c.json({ message: "additional metadata is needed to mint NFT" }, 400);
+    }
+
+    if (amount !== 1) {
+      return c.json({ message: "can only mint 1 NFT" }, 400);
+    }
+ 
     const mintResult = await mintNonFungibleToken({
-      metadataURI: ,
-      tokenId: args.tokenId,
+      additionalMetadata: metadata,
+      description: description,
+      name: name,
+      tokenIdStr: args.tokenId,
     });
+
+    return c.json({ mintResult });
   }
 });
 
@@ -227,10 +262,21 @@ app.post("/tokens/associate", async (c) => {
   };
 
   const args = safeParseResult.data;
-  const item: TAccountData | undefined = await data.get(`accounts:${args.accountId}`);
+  const item: TAccountData | null = await getAccount(args.accountId);
 
   if (!item) {
     return c.json({ message: `Account not found: ${args.accountId}` }, 404);
+  }
+
+  const tokens:TTokenData[] = [];
+
+  for (let ti = 0; ti < args.tokenIds.length; ti++) {
+    const tokenId = args.tokenIds[ti];
+    const token = await getToken(tokenId);
+    if (token === null) {
+      return c.json({ message: `Token not found: ${tokenId}` }, 404);
+    }
+    tokens.push(token);
   }
 
   const associateAccount = await associateTokensWithAccount({
