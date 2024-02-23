@@ -3,10 +3,8 @@ import { ZMimeType, ZLanguage, MimeTypes, ZTokenAdditionalMetadata } from "../ty
 import { Validator, defaultSchemaVersion } from "@hashgraph/nft-utilities";
 import { Blob } from "buffer";
 import { hederaOperatorId } from "../client";
-import { getBlobFromCid, pinNFTMetadataToIPFS, testPinataAuthentication, uploadMetadataToNFTStorage } from "../storage";
+import { pinNFTMetadataToIPFS } from "../storage";
 import { params } from "@ampt/sdk";
-import { EncodedURL } from "nft.storage/dist/src/lib/interface";
-import pinJSONToIPFS from "@pinata/sdk/types/commands/pinning/pinJSONToIPFS";
 
 // See reference: https://docs.hedera.com/hedera/tutorials/token/structure-your-token-metadata-using-json-schema-v2
 // See also: https://www.npmjs.com/package/@hashgraph/nft-utilities
@@ -66,7 +64,7 @@ export const ZGetNFTMetadataBasicArgs = z.object({
   additionalMetadata: ZTokenAdditionalMetadata
 });
 export type TGetNFTMetadataBasicArgs = z.infer<typeof ZGetNFTMetadataBasicArgs>;
-export const storeNFTMetadata = async ({additionalMetadata, description, name}:TGetNFTMetadataBasicArgs):Promise<EncodedURL> => {
+export const storeNFTMetadata = async ({additionalMetadata, description, name}:TGetNFTMetadataBasicArgs):Promise<string> => {
   const metadata = {
     attributes: [],
     creator: hederaOperatorId.toString(),
