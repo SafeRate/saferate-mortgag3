@@ -245,7 +245,7 @@ app.post("/tokens/mint", async (c) => {
       tokenIdStr: args.tokenId,
     });
 
-    return c.json({ mintResult });
+    return c.json({ serials : mintResult });
   }
 });
 

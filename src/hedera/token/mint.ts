@@ -24,8 +24,6 @@ export const mintFungibleTokens = async({amount, tokenId}:mintFungibleTokenArgs)
 
     //Request the receipt of the transaction
     const receipt = await txResponse.getReceipt(hederaClient);
-
-    console.log(JSON.stringify(receipt));
         
     //Get the transaction consensus status
     const transactionStatus = receipt.status;
@@ -46,13 +44,9 @@ export type mintNonFungibleTokenArgs = {
     tokenIdStr: string;
 }
 
-export const mintNonFungibleToken = async ({additionalMetadata, description, name, tokenIdStr}:mintNonFungibleTokenArgs) => {
+export const mintNonFungibleToken = async ({additionalMetadata, description, name, tokenIdStr}:mintNonFungibleTokenArgs):Promise<number[]> => {
 
     const tokenId = TokenId.fromString(tokenIdStr);
-
-    console.log(`Minting NFT with token ID: ${tokenId.toString()}`);
-    console.log('Additional Metadata: ', additionalMetadata);
-    console.log(additionalMetadata);
 
     const fullMetadataURI = await storeNFTMetadata({
       additionalMetadata,
@@ -60,14 +54,10 @@ export const mintNonFungibleToken = async ({additionalMetadata, description, nam
       name
     });
 
-    // const fullMetadataURI = "ipfs://bafyreiezgnzimnibu4ns2simi7pjugi2pbwnf5e27etmldooxlbxmuqtru";
-    console.log('Metadata stored at: ', fullMetadataURI);
-    console.log(tokenId.toString());
-
-    const transaction = await new TokenMintTransaction()
+     const transaction = await new TokenMintTransaction()
         .setTokenId(tokenId)
         .setMetadata(getBufferArrayFromCid({cid:fullMetadataURI}))
-        .setMaxTransactionFee(new Hbar(20)) //Use when HBAR is under 10 cents
+        .setMaxTransactionFee(new Hbar(50)) //Use when HBAR is under 10 cents
         .freezeWith(hederaClient);
 
     //Sign with the supply private key of the token 
@@ -78,17 +68,23 @@ export const mintNonFungibleToken = async ({additionalMetadata, description, nam
 
     //Request the receipt of the transaction
     const receipt = await txResponse.getReceipt(hederaClient);
-
-    console.log(JSON.stringify(receipt));
         
     //Get the transaction consensus status
     const transactionStatus = receipt.status;
-
-    console.log(JSON.stringify(receipt.status));
   
     if (transactionStatus.toString() !== "SUCCESS") {
       throw new Error("Failed to mint token");
     } else {
-      return true;
+      if (receipt.serials.length === 0) {
+        throw new Error("Failed to mint token");
+      } else {
+        const serialsNumber = receipt.serials;
+        const serials = [];
+        for (let s = 0; s < serialsNumber.length; s++) {
+          serials.push(serialsNumber[s].toNumber());
+        }
+        
+        return serials;
+      }
     }
 };

@@ -18,6 +18,5 @@ export type uploadMetadataToPinataArgs = {
 
 export const pinNFTMetadataToIPFS = async ({metadata}:uploadMetadataToPinataArgs):Promise<PinataPinResponse> => {
     const result = await pinata.pinJSONToIPFS(metadata);
-    console.log(result);
     return result;
 };

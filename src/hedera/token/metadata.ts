@@ -48,8 +48,8 @@ export type TTokenMetadata = z.infer<typeof ZTokenMetadata>;
 
 export const getStandardTokenImage = (): string => {
   const tokenImageLocation = params("TOKEN_LOGO_URI");
-  console.log("Token logo URI", tokenImageLocation);
-  console.log('Token image location: ', tokenImageLocation)
+  // console.log("Token logo URI", tokenImageLocation);
+  // console.log('Token image location: ', tokenImageLocation);
 
   if (!tokenImageLocation) {
     throw new Error("TOKEN_LOGO_URI not set");
