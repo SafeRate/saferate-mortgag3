@@ -5,25 +5,78 @@ import {
     TransactionId,
     TransferTransaction,
   } from "@hashgraph/sdk";
-  import { hederaClient } from "../client";
-  
+  import { hederaClient, hederaOperatorPrivateKey } from "../client";
+
+  type transferFungibleTokenArgs = {
+    amount: number;
+    fromAccount: AccountId;
+    signers: PrivateKey[];
+    toAccount: AccountId;
+    tokenId: TokenId;
+  };
+
+  export const transferFungibleToken = async ({
+    amount,
+    fromAccount,
+    signers,
+    toAccount,
+    tokenId
+  }:transferFungibleTokenArgs): Promise<TransactionId> => {
+    
+    //Create the transfer transaction
+    const transaction = await new TransferTransaction()
+      .addTokenTransfer(tokenId, fromAccount, -amount)
+      .addTokenTransfer(tokenId, toAccount, amount)
+      .freezeWith(hederaClient);
+
+    //Sign with the operator account private key
+    let signTx = await transaction.sign(hederaOperatorPrivateKey);
+
+    //Sign with each of the signers private keys
+    for (let s = 0; s < signers.length; s++) {
+      const signer = signers[s];
+      signTx = await signTx.sign(signer);
+    }
+
+    //Sign with the client operator private key and submit to a Hedera network
+    const txResponse = await signTx.execute(hederaClient);
+
+    const transactionId = txResponse.transactionId;
+
+    //Request the receipt of the transaction
+    const receipt = await txResponse.getReceipt(hederaClient);
+
+    //Obtain the transaction consensus status
+    const transactionStatus = receipt.status;
+
+    console.log("The transaction consensus status " + transactionStatus.toString());
+
+    if (transactionStatus.toString() !== "SUCCESS") {
+      throw new Error("Failed to transfer NFT");
+    } else {
+      return transactionId;
+    }
+  };
+
   type transferNFTArgs = {
-    from: AccountId;
+    fromAccount: AccountId;
     serial: number;
     signers: PrivateKey[];
-    to: AccountId;
-    token: TokenId;
+    toAccount: AccountId;
+    tokenId: TokenId;
   };
-  
+
   export const transferNFT = async ({
-    from,
+    fromAccount,
     serial,
     signers,
-    to,
-    token,
+    toAccount,
+    tokenId,
   }: transferNFTArgs): Promise<TransactionId> => {
+
+
     let tokenTransferTx = await new TransferTransaction()
-      .addNftTransfer(token, serial, from, to)
+      .addNftTransfer(tokenId, serial, fromAccount, toAccount)
       .freezeWith(hederaClient);
   
     const signatures = [];

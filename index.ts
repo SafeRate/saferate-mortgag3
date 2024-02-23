@@ -5,6 +5,9 @@ import { ETokenCategory, ETokenTypes, ZHederaIdRegex, ZTokenAdditionalMetadata, 
 import { mintFungibleTokens, mintNonFungibleToken } from "./src/hedera/token/mint";
 import { TAccountData, TTokenData, ZDbCollection, collectionDelete, collectionGet, getAccount, getToken, setAccount, setToken } from "./src/db";
 import { associateTokensWithAccount, createAccounting, createAssetCredentialSoulboundToken, createEntityPermission } from "./src/hedera/token";
+import { getAccountKey } from "./src/db/utils";
+import { transferFungibleToken, transferNFT } from "./src/hedera/token/transfer";
+import { AccountId, TokenId } from "@hashgraph/sdk";
 
 const app = new Hono();
 
@@ -29,6 +32,12 @@ const ZDataGetRequest = z.object({
 });
 export type TDataGetRequest = z.infer<typeof ZDataGetRequest>;
 
+const ZTokenAssociateRequest = z.object({
+  accountId: ZHederaIdRegex,
+  tokenIds: z.array(ZHederaIdRegex)
+});
+export type TTokenAssociateRequest = z.infer<typeof ZTokenAssociateRequest>;
+
 export const ZTokenCreateRequest = z.object({
   symbol: ZTokenSymbol,
 });
@@ -48,6 +57,15 @@ export const ZTokenMintRequest = z.object({
   tokenId: ZHederaIdRegex
 });
 export type TTokenMintRequest = z.infer<typeof ZTokenMintRequest>;
+
+export const ZTokenTransferRequest = z.object({
+  amount: z.number().gte(0).nullish(),
+  fromAccountId: ZHederaIdRegex,
+  serial: z.number().gte(0).nullish(),
+  symbol: ZTokenSymbol,
+  toAccountId: ZHederaIdRegex
+});
+export type TTokenTransferRequest = z.infer<typeof ZTokenTransferRequest>;
 
 export const ZRequest = z.union([ZAccountCreateRequest, ZDataDeleteRequest, ZDataGetRequest, ZTokenCreateRequest]);
 export type TRequest = z.infer<typeof ZRequest>;
@@ -249,29 +267,25 @@ app.post("/tokens/mint", async (c) => {
   }
 });
 
-const ZAssociateRequest = z.object({
-  accountId: ZHederaIdRegex,
-  tokenIds: z.array(ZHederaIdRegex)
-});
 app.post("/tokens/associate", async (c) => {
 
   const body = await c.req.json();
-  const safeParseResult = ZAssociateRequest.safeParse(body);
+  const safeParseResult = ZTokenAssociateRequest.safeParse(body);
   if (!safeParseResult.success) {
     return c.json({ message: safeParseResult.error }, 400);
   };
 
-  const args = safeParseResult.data;
-  const item: TAccountData | null = await getAccount(args.accountId);
+  const { accountId, tokenIds } = safeParseResult.data;
+  const item: TAccountData | null = await getAccount(accountId);
 
   if (!item) {
-    return c.json({ message: `Account not found: ${args.accountId}` }, 404);
+    return c.json({ message: `Account not found: ${accountId}` }, 404);
   }
 
   const tokens:TTokenData[] = [];
 
-  for (let ti = 0; ti < args.tokenIds.length; ti++) {
-    const tokenId = args.tokenIds[ti];
+  for (let ti = 0; ti < tokenIds.length; ti++) {
+    const tokenId = tokenIds[ti];
     const token = await getToken(tokenId);
     if (token === null) {
       return c.json({ message: `Token not found: ${tokenId}` }, 404);
@@ -280,9 +294,9 @@ app.post("/tokens/associate", async (c) => {
   }
 
   const associateAccount = await associateTokensWithAccount({
-    accountId: args.accountId,
+    accountId: accountId,
     accountKey: item.privateKey,
-    tokenIds: args.tokenIds,
+    tokenIds: tokenIds,
   });
 
   if (associateAccount === true) {
@@ -290,6 +304,52 @@ app.post("/tokens/associate", async (c) => {
   } else {
     return c.json({ success : false });
   }
+});
+
+app.post("/tokens/transfer", async (c) => {
+
+  const body = await c.req.json();
+  const safeParseResult = ZTokenTransferRequest.safeParse(body);
+  if (!safeParseResult.success) {
+    return c.json({ message: safeParseResult.error }, 400);
+  };
+
+  const {amount, fromAccountId, serial, symbol, toAccountId } = safeParseResult.data;
+
+  const tokenDetails = await getToken(symbol);
+  if (tokenDetails === null) {
+    return c.json({ message: `Token symbol not found: ${symbol}` }, 404);
+  }
+
+  const signers = [await getAccountKey(fromAccountId), await getAccountKey(toAccountId)];
+
+  if (tokenDetails.type === ETokenTypes.FUNGIBLE) {
+
+    if (!amount) {
+      return c.json({ message: "amount is needed to transfer fungible token" }, 400);
+    }
+
+    const transaction = await transferFungibleToken({
+      amount: amount,
+      fromAccount: AccountId.fromString(fromAccountId),
+      signers: signers,
+      toAccount: AccountId.fromString(toAccountId),
+      tokenId: TokenId.fromString(tokenDetails.tokenId)
+    });
+  } else if (tokenDetails.type === ETokenTypes.NON_FUNGIBLE) {
+
+    if (!serial) {
+      throw new Error("serial is needed to transfer non-fungible token");
+    }
+
+    const transaction = await transferNFT({
+      fromAccount: AccountId.fromString(fromAccountId),
+      serial,
+      signers: signers,
+      toAccount: AccountId.fromString(toAccountId),
+      tokenId: TokenId.fromString(tokenDetails.tokenId)
+    });
+  }  
 });
 
 app.fire();
