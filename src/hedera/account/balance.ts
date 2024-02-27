@@ -1,12 +1,10 @@
 import {
-    AccountBalance,
     AccountBalanceQuery,
     AccountId,
-    ContractId,
-    TokenId,
   } from "@hashgraph/sdk";
   
   import { hederaClient } from "../client";
+import { TTokenBalance } from "../types";
   
   type getAccountBalanceArgs = {
     accountId: AccountId;
@@ -14,54 +12,36 @@ import {
   
   export const getAccountBalance = async ({
     accountId,
-  }: getAccountBalanceArgs): Promise<AccountBalance> => {
+  }: getAccountBalanceArgs): Promise<TTokenBalance[]> => {
+    
     const balance = await new AccountBalanceQuery()
       .setAccountId(accountId)
       .execute(hederaClient);
-  
-    return balance;
-  };
-  
-  type getAccountBalanceForContractArgs = {
-    accountId: AccountId;
-    contractId: ContractId;
-  };
-  
-  export const getAccountBalanceForContract = async ({
-    accountId,
-    contractId,
-  }: getAccountBalanceForContractArgs): Promise<AccountBalance> => {
-    const balance = await new AccountBalanceQuery()
-      .setAccountId(accountId)
-      .setContractId(contractId)
-      .execute(hederaClient);
-  
-    return balance;
-  };
-  
-  type getAccountBalanceForTokenArgs = {
-    accountId: AccountId;
-    tokenId: TokenId;
-  };
-  
-  export const getAccountBalanceForToken = async ({
-    accountId,
-    tokenId,
-  }: getAccountBalanceForTokenArgs): Promise<number> => {
-    const balance = await getAccountBalance({ accountId });
-    const accountTokens = balance.toJSON();
-  
-    let amount = 0;
-  
-    if (Array.isArray(accountTokens?.tokens)) {
-      const tokens = accountTokens.tokens;
-      for (let t = 0; t < tokens.length; t++) {
-        const token = tokens[t];
-        if (token.tokenId === tokenId.toString()) {
-          amount = parseInt(token.balance);
-        }
+
+    const tokens:TTokenBalance[] = [];
+    
+    const hbar = parseFloat(balance.hbars.toString());
+    tokens.push({
+      tokenId: "0.0.1234",
+      balance: hbar,
+      decimals: 18
+    });
+
+    const tokenBalances = balance.toJSON();
+
+    if (tokenBalances.tokens) {
+      for (let tb = 0; tb < tokenBalances.tokens.length; tb++) {
+        const tokenBalance = tokenBalances.tokens[tb];
+        const tokenId = tokenBalance.tokenId;
+        const balance = parseFloat(tokenBalance.balance);
+        const decimals = tokenBalance.decimals;
+        tokens.push({
+          tokenId,
+          balance,
+          decimals
+        });
       }
     }
   
-    return amount;
+    return tokens;
   };

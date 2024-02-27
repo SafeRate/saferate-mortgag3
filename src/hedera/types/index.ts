@@ -127,6 +127,13 @@ export enum ETokenTypes {
 };
 export const ZTokenTypes = z.nativeEnum(ETokenTypes);
 
+export const ZTokenBalance = z.object({
+  tokenId: ZHederaIdRegex,
+  balance: z.number().gte(0).finite(),
+  decimals: z.number().int().positive().finite(),
+});
+export type TTokenBalance = z.infer<typeof ZTokenBalance>;
+
 export enum ETokenCategory {
   ACCOUNTING = "accounting",
   ASSET_CREDENTIAL = "asset-credential",

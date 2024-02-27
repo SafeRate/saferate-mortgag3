@@ -2,10 +2,11 @@ import {
     AccountId,
     PrivateKey,
     TokenId,
+    TokenUnfreezeTransaction,
     TransactionId,
     TransferTransaction,
   } from "@hashgraph/sdk";
-  import { hederaClient, hederaOperatorPrivateKey } from "../client";
+  import { hederaClient, hederaOperatorId, hederaOperatorPrivateKey } from "../client";
 
   type transferFungibleTokenArgs = {
     amount: number;
@@ -52,7 +53,9 @@ import {
     console.log("The transaction consensus status " + transactionStatus.toString());
 
     if (transactionStatus.toString() !== "SUCCESS") {
-      throw new Error("Failed to transfer NFT");
+      console.log("Failed to transfer fungible tokens");
+      console.log("The transaction status " + transactionStatus.toString());
+      throw new Error("Failed to transfer fungible tokens");
     } else {
       return transactionId;
     }
@@ -74,21 +77,33 @@ import {
     tokenId,
   }: transferNFTArgs): Promise<TransactionId> => {
 
+    //Unfreeze an account and freeze the unsigned transaction for signing
+    const transaction = await new TokenUnfreezeTransaction()
+        .setAccountId(toAccount)
+        .setTokenId(tokenId)
+        .freezeWith(hederaClient);
+
+    //Sign with the freeze private key of the token 
+    const signTx = await transaction.sign(hederaOperatorPrivateKey);
+
+    //Submit the transaction to a Hedera network
+    const txResponse = await signTx.execute(hederaClient);
+
+    //Request the receipt of the transaction
+    const receipt = await txResponse.getReceipt(hederaClient);
+
+    //Obtain the transaction consensus status
+    const transactionStatus = receipt.status;
+
+    console.log("The transaction consensus status is " +transactionStatus.toString());    
 
     let tokenTransferTx = await new TransferTransaction()
       .addNftTransfer(tokenId, serial, fromAccount, toAccount)
-      .freezeWith(hederaClient);
-  
-    const signatures = [];
+      .freezeWith(hederaClient);      
+
     for (let s = 0; s < signers.length; s++) {
       const signer = signers[s];
-      signatures.push(signer.signTransaction(tokenTransferTx));
-    }
-  
-    for (let s = 0; s < signatures.length; s++) {
-      const signer = signers[s];
-      const signature = signatures[s];
-      tokenTransferTx = tokenTransferTx.addSignature(signer.publicKey, signature);
+      tokenTransferTx = await tokenTransferTx.sign(signer);
     }
   
     const tokenTransferSubmit = await tokenTransferTx.execute(hederaClient);
@@ -96,6 +111,8 @@ import {
     const tokenTransferRx = await tokenTransferSubmit.getReceipt(hederaClient);
   
     if (tokenTransferRx.status.toString() !== "SUCCESS") {
+      console.log("Failed to transfer NFT");
+      console.log("The transaction status " + tokenTransferRx.status.toString());      
       throw new Error("Failed to transfer NFT");
     } else {
       return transactionId;

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { createHederaAccount } from "./src/hedera/account";
+import { createHederaAccount, getAccountBalance } from "./src/hedera/account";
 import { z } from "zod";
 import { ETokenCategory, ETokenTypes, ZHederaIdRegex, ZTokenAdditionalMetadata, ZTokenSymbol, getTokenDetailsForSymbol } from "./src/hedera/types";
 import { mintFungibleTokens, mintNonFungibleToken } from "./src/hedera/token/mint";
@@ -10,6 +10,11 @@ import { transferFungibleToken, transferNFT } from "./src/hedera/token/transfer"
 import { AccountId, TokenId } from "@hashgraph/sdk";
 
 const app = new Hono();
+
+const ZAccountBalanceRequest = z.object({
+  accountId: ZHederaIdRegex,
+});
+export type TAccountBalanceRequest = z.infer<typeof ZAccountBalanceRequest>;
 
 const ZAccountCreateRequest = z.object({
   name: z.string(),
@@ -34,7 +39,7 @@ export type TDataGetRequest = z.infer<typeof ZDataGetRequest>;
 
 const ZTokenAssociateRequest = z.object({
   accountId: ZHederaIdRegex,
-  tokenIds: z.array(ZHederaIdRegex)
+  symbols: z.array(ZTokenSymbol)
 });
 export type TTokenAssociateRequest = z.infer<typeof ZTokenAssociateRequest>;
 
@@ -44,7 +49,7 @@ export const ZTokenCreateRequest = z.object({
 export type TTokenCreateRequest = z.infer<typeof ZTokenCreateRequest>;
 
 export const ZTokenGetRequest = z.object({
-  tokenId: ZTokenSymbol,
+  symbol: ZTokenSymbol,
 });
 export type TTokenGetRequest = z.infer<typeof ZTokenGetRequest>;
 
@@ -69,6 +74,18 @@ export type TTokenTransferRequest = z.infer<typeof ZTokenTransferRequest>;
 
 export const ZRequest = z.union([ZAccountCreateRequest, ZDataDeleteRequest, ZDataGetRequest, ZTokenCreateRequest]);
 export type TRequest = z.infer<typeof ZRequest>;
+
+app.post("/accounts/balance", async (c) => {
+
+  const body = await c.req.json();
+  const safeParseResult = ZAccountBalanceRequest.safeParse(body);
+  if (!safeParseResult.success) {
+    return c.json({ message: safeParseResult.error }, 400);
+  };
+  const { accountId } = safeParseResult.data;
+  const accountBalance = await getAccountBalance({ accountId: AccountId.fromString(accountId) });
+  return c.json(accountBalance);
+});
 
 app.post("/accounts/create", async (c) => {
 
@@ -154,12 +171,12 @@ app.post("/tokens/get", async (c) => {
   };
 
   const args = safeParseResult.data;
-  const tokenId = args.tokenId;
+  const symbol = args.symbol;
 
-  const token = await getToken(tokenId);
+  const token = await getToken(symbol);
 
   if (token === null) {
-    return c.json({ message: `Token not found: ${tokenId}` }, 404);
+    return c.json({ message: `Token not found: ${symbol}` }, 404);
   }
 
   return c.json(token);
@@ -275,22 +292,23 @@ app.post("/tokens/associate", async (c) => {
     return c.json({ message: safeParseResult.error }, 400);
   };
 
-  const { accountId, tokenIds } = safeParseResult.data;
+  const { accountId, symbols } = safeParseResult.data;
   const item: TAccountData | null = await getAccount(accountId);
 
   if (!item) {
     return c.json({ message: `Account not found: ${accountId}` }, 404);
   }
 
-  const tokens:TTokenData[] = [];
+  const tokenIds:string[] = [];
 
-  for (let ti = 0; ti < tokenIds.length; ti++) {
-    const tokenId = tokenIds[ti];
-    const token = await getToken(tokenId);
+  for (let s = 0; s < symbols.length; s++) {
+    const symbol = symbols[s];
+    const token = await getToken(symbol);
     if (token === null) {
-      return c.json({ message: `Token not found: ${tokenId}` }, 404);
+      return c.json({ message: `Token not found: ${symbol}` }, 404);
     }
-    tokens.push(token);
+    
+    tokenIds.push(token.tokenId);
   }
 
   const associateAccount = await associateTokensWithAccount({
@@ -315,15 +333,15 @@ app.post("/tokens/transfer", async (c) => {
   };
 
   const {amount, fromAccountId, serial, symbol, toAccountId } = safeParseResult.data;
-
   const tokenDetails = await getToken(symbol);
+
   if (tokenDetails === null) {
     return c.json({ message: `Token symbol not found: ${symbol}` }, 404);
   }
 
   const signers = [await getAccountKey(fromAccountId), await getAccountKey(toAccountId)];
 
-  if (tokenDetails.type === ETokenTypes.FUNGIBLE) {
+  if (tokenDetails.tokenType === ETokenTypes.FUNGIBLE) {
 
     if (!amount) {
       return c.json({ message: "amount is needed to transfer fungible token" }, 400);
@@ -336,7 +354,8 @@ app.post("/tokens/transfer", async (c) => {
       toAccount: AccountId.fromString(toAccountId),
       tokenId: TokenId.fromString(tokenDetails.tokenId)
     });
-  } else if (tokenDetails.type === ETokenTypes.NON_FUNGIBLE) {
+    
+  } else if (tokenDetails.tokenType === ETokenTypes.NON_FUNGIBLE) {
 
     if (!serial) {
       throw new Error("serial is needed to transfer non-fungible token");
@@ -349,6 +368,8 @@ app.post("/tokens/transfer", async (c) => {
       toAccount: AccountId.fromString(toAccountId),
       tokenId: TokenId.fromString(tokenDetails.tokenId)
     });
+
+    return c.json({ message: `Success` }, 200);
   }  
 });
 
